@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TENG台灣股票投資管理 V2.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* 保持原有的樣式不變 */
+        body {
+            font-family: 'Noto Sans TC', Arial, sans-serif;
+            font-size: 16px;
+            margin: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        h1 {
+            font-size: 24px;
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .form-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .form-container form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .form-container label {
+            font-size: 18px;
+            margin-right: 10px;
+            flex: 0 0 150px;
+            line-height: 32px;
+        }
+        .form-container input[type="text"],
+        .form-container input[type="number"],
+        .form-container input[type="date"] {
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            flex: 1;
+            min-width: 200px;
+        }
+        .form-container input[type="radio"] {
+            margin: 0 5px 0 15px;
+        }
+        .form-container button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .form-container button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto 30px;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+            font-weight: 700;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .error, .message {
+            color: #dc3545;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .success-message {
+            color: #28a745;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 16px;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .button-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .transaction-message {
+            color: #28a745;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        @media (max-width: 768px) {
+            .form-container form {
+                flex-direction: column;
+            }
+            .form-container label {
+                flex: none;
+                margin-right: 0;
+            }
+            .form-container input[type="text"],
+            .form-container input[type="number"],
+            .form-container input[type="date"] {
+                min-width: auto;
+                width: 100%;
+            }
+            table {
+                font-size: 14px;
+            }
+            .button-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 20px;
+            }
+            h2 {
+                font-size: 18px;
+            }
+            th, td {
+                padding: 8px;
+            }
+        }
+    </style>
+    <script>
+        function fetchStockName() {
+            const code = document.querySelector('input[name="code"]').value;
+            const market = document.querySelector('input[name="market"]:checked').value;
+            if (code.length >= 4) {
+                fetch('/fetch_stock_name', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `code=${encodeURIComponent(code)}&market=${encodeURIComponent(market)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.log(data.error);
+                        document.querySelector('input[name="name"]').value = '';
+                    } else {
+                        document.querySelector('input[name="name"]').value = data.name;
+                    }
+                })
+                .catch(error => console.log('查詢失敗: ' + error));
+            } else {
+                document.querySelector('input[name="name"]').value = '';
+            }
+        }
+
+        function formatNumber(number) {
+            return Number(number).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const numberCells = document.querySelectorAll('.format-number');
+            numberCells.forEach(cell => {
+                cell.textContent = formatNumber(cell.textContent);
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>TENG台灣股票投資管理 V2.0</h1>
+
+    {% if error %}
+        <div class="error">
+            {{ error }}
+        </div>
+    {% endif %}
+    {% for message in get_flashed_messages() %}
+        <div class="message">
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    <div class="form-container">
+        <h2>新增交易</h2>
+        <form method="POST">
+            <input type="hidden" name="action" value="add_transaction">
+            <div>
+                <label>日期 (YYYY-MM-DD):</label>
+                <input type="date" name="date" value="{{ default_date }}" required>
+            </div>
+            <div>
+                <label>股票代碼 (例如: 2317):</label>
+                <input type="text" name="code" oninput="fetchStockName()" required>
+            </div>
+            <div>
+                <label>股票名稱 (可手動輸入):</label>
+                <input type="text" name="name" value="{{ stock_name or '' }}">
+            </div>
+            <div>
+                <label>市場:</label>
+                <input type="radio" name="market" value="TWSE" checked onchange="fetchStockName()"> 上市 (TWSE)
+                <input type="radio" name="market" value="TWO" onchange="fetchStockName()"> 上櫃 (TWO)
+            </div>
+            <div>
+                <label>交易類型:</label>
+                <input type="radio" name="type" value="Buy" checked> 買入
+                <input type="radio" name="type" value="Sell"> 賣出
+            </div>
+            <div>
+                <label>股數:</label>
+                <input type="number" name="quantity" value="1000" step="1000" min="1000" required>
+            </div>
+            <div>
+                <label>每股價格 (NTD):</label>
+                <input type="number" name="price" step="0.01" required>
+            </div>
+            <div class="button-container">
+                <button type="submit">新增交易</button>
+                {% if add_transaction_message %}
+                    <span class="transaction-message">{{ add_transaction_message }}</span>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <div class="form-container">
+        <h2>匯入交易紀錄</h2>
+        <form method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="action" value="import_transactions">
+            <input type="file" name="import_file" accept=".csv" required>
+            <label><input type="checkbox" name="overwrite"> 覆蓋現有紀錄</label>
+            <button type="submit">匯入</button>
+        </form>
+        <div style="margin-top: 10px;">
+            <a href="/export_transactions">匯出交易紀錄</a>
+        </div>
+    </div>
+
+    <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2>投資組合總覽</h2>
+            <form method="POST" style="display: inline;">
+                <input type="hidden" name="action" value="update_all_prices">
+                <button type="submit" style="background-color: #28a745;">更新所有股價</button>
+            </form>
+        </div>
+        <table>
+            <tr>
+                <th>股票代碼</th>
+                <th>股票名稱</th>
+                <th>持有股數</th>
+                <th>平均買入價</th>
+                <th>目前股價</th>
+                <th>總成本</th>
+                <th>市值</th>
+                <th>未實現損益</th>
+                <th>已實現損益</th>
+            </tr>
+            {% for s in summary %}
+                <tr>
+                    <td>{{ s.Stock_Code }}</td>
+                    <td>{{ s.Stock_Name }}</td>
+                    <td>{{ s.Quantity }}</td>
+                    <td>{{ s.Avg_Buy_Price|round(2) }}</td>
+                    <td>{{ s.Current_Price|round(2) }}</td>
+                    <td class="format-number">{{ s.Total_Cost }}</td>
+                    <td class="format-number">{{ s.Market_Value }}</td>
+                    <td class="format-number">{{ s.Unrealized_Profit }}</td>
+                    <td class="format-number">{{ s.Realized_Profit }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="9">無投資組合數據</td></tr>
+            {% endfor %}
+            {% if summary %}
+                <tr>
+                    <td colspan="2">總計</td>
+                    <td>{{ summary|sum(attribute='Quantity') }}</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="format-number">{{ total_cost }}</td>
+                    <td class="format-number">{{ total_market_value }}</td>
+                    <td class="format-number">{{ total_unrealized_profit }}</td>
+                    <td class="format-number">{{ total_realized_profit }}</td>
+                </tr>
+            {% endif %}
+        </table>
+    </div>
+
+<div>
+    <h2>交易紀錄</h2>
+    <table>
+        <tr>
+            <th>日期</th>
+            <th>股票代碼</th>
+            <th>股票名稱</th>
+            <th>類型</th>
+            <th>股數</th>
+            <th>每股價格</th>
+            <th>手續費</th>
+            <th>交易稅</th>
+            <th>操作</th>
+        </tr>
+        {% for t in transactions %}
+            <tr>
+                <td>{{ t.Date }}</td>
+                <td>{{ t.Stock_Code }}</td>
+                <td>{{ t.Stock_Name }}</td>
+                <td>{{ '買入' if t.Type == 'Buy' else '賣出' }}</td>
+                <td>{{ t.Quantity }}</td>
+                <td>{{ t.Price|round(2) }}</td>
+                <td>{{ t.Fee|round(2) }}</td>
+                <td>{{ t.Tax|round(2) }}</td>
+                <td>
+                    <form method="POST" style="display: inline;">
+                        <input type="hidden" name="action" value="delete_transaction">
+                        <input type="hidden" name="transaction_index" value="{{ loop.index0 }}">
+                        <button type="submit" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;" onclick="return confirm('確定要刪除這筆交易嗎？此操作無法復原。')">刪除</button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="9">無交易紀錄</td></tr>
+        {% endfor %}
+    </table>
+    {% if delete_transaction_message %}
+        <div class="success-message">{{ delete_transaction_message }}</div>
+    {% endif %}
+</div>
+
+</body>
+</html>
