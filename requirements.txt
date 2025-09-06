@@ -1,0 +1,13 @@
+flask==2.3.3
+pandas==2.0.3
+yfinance==0.2.18
+gunicorn==21.2.0
+werkzeug==2.3.7
+lxml==4.9.3
+multitasking==0.0.9
+requests==2.31.0
+google-auth==2.23.0
+google-auth-oauthlib==1.0.0
+google-auth-httplib2==0.1.0
+google-api-python-client==2.104.0
+gspread==5.8.0
